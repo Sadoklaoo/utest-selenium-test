@@ -1,0 +1,29 @@
+##Gradle build
+
+.gradle/
+build/
+
+##Gradle wrapper jar (if you prefer not to commit the wrapper jar)
+
+!gradle/wrapper/gradle-wrapper.jar
+
+##IDE files
+
+*.iml
+.idea/
+.vscode/
+##OS files
+
+.DS_Store
+Thumbs.db
+
+##Logs and test reports
+
+*.log
+build/reports/
+
+##Others
+
+out/
+**/target/
+

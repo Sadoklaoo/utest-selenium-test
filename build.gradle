@@ -1,0 +1,42 @@
+apply plugin: 'java'
+
+// Project coordinates
+group = 'elte.tqpj39'
+version = '1.0-SNAPSHOT'
+
+// Java compatibility (adjust to your JDK version)
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+mavenCentral()
+}
+
+dependencies {
+// Selenium WebDriver API (includes ChromeDriver)
+implementation 'org.seleniumhq.selenium:selenium-java:4.31.0'
+// TestNG for organizing and running tests
+testImplementation 'org.testng:testng:7.1.0'
+// Simple logging backend
+testImplementation 'org.slf4j:slf4j-simple:1.7.9'
+}
+
+test {
+useTestNG()
+testLogging {
+events "passed", "skipped", "failed"
+showStandardStreams = true
+}
+}
+
+// Configure the Gradle wrapper
+tasks.named('wrapper', org.gradle.api.tasks.wrapper.Wrapper) {
+gradleVersion = '8.14.1'
+distributionType = org.gradle.api.tasks.wrapper.Wrapper.DistributionType.BIN
+}
+
+// Ensure consistent encoding across environments
+tasks.withType(JavaCompile) {
+options.encoding = 'UTF-8'
+}
+
