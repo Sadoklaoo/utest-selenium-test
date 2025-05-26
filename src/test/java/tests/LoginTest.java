@@ -1,5 +1,7 @@
 package tests;
 
+import utils.Configuration;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -14,49 +16,69 @@ import java.time.Duration;
 
 public class LoginTest {
     private WebDriver driver;
+    private WebDriverWait wait;
     private LoginPage loginPage;
     private HomePage homePage;
 
     @BeforeClass
     public void setUp() {
-        driver = new ChromeDriver();
+        // -- ChromeOptions (e.g. headless, disable-infobars, etc.) --
+        ChromeOptions options = new ChromeOptions();
+        // options.addArguments("--headless"); // uncomment to run headless
+
+        driver = new ChromeDriver(options);
+        // implicit wait from config
+        driver.manage()
+              .timeouts()
+              .implicitlyWait(Duration.ofSeconds(
+                  Configuration.getInt("timeout.default")
+              ));
+
+        wait = new WebDriverWait(driver, Duration.ofSeconds(
+                  Configuration.getInt("timeout.default")
+              ));
+
         loginPage = new LoginPage(driver);
         homePage  = new HomePage(driver);
     }
 
     @Test
     public void testValidLogin() throws InterruptedException {
+        // open login page via base URL
         loginPage.open();
-        loginPage.login("sadok.laouissi.sl@gmail.com", "?+aYvt;9EwF+ek!");
 
-        
-        // Wait for the user menu toggle to appear (indicates post‐login UI is ready)
-        new WebDriverWait(driver, Duration.ofSeconds(10))
-            .until(ExpectedConditions.elementToBeClickable(
-                By.cssSelector("nav-sidebar-dropdown-toggle")
-            ));
+        // perform login using properties
+        loginPage.login(
+            Configuration.get("credentials.username"),
+            Configuration.get("credentials.password")
+        );
 
-        // Now open the menu and sign out
+        // wait for the user-menu toggle to be clickable (matches HomePage locator)
+        wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("nav-sidebar-dropdown-toggle.nav-sidebar-user-card-dropdown__arrow > button")
+        ));
+
+        // verify Sign Out is visible via the POM
         homePage.openUserMenu();
-        assertTrue(homePage.isSignOutVisible());
+        assertTrue(homePage.isSignOutVisible(),
+                   "Sign Out should be visible after login");
 
-        // Give the server a moment before clicking sign out
-        Thread.sleep(1000);
+        // small pause before clicking
+        Thread.sleep(500);
 
+        // do logout
         homePage.signOut();
 
-        
-        // Wait until the URL is exactly https://www.utest.com/
-        new WebDriverWait(driver, Duration.ofSeconds(10))
-            .until(ExpectedConditions.urlToBe("https://www.utest.com/"));
-
-        // Assert we’re on the homepage
-        assertEquals(driver.getCurrentUrl(), "https://www.utest.com/",
-                    "After logout, should be redirected to the uTest homepage");
+        System.out.println(Configuration.get("home.url"));
+        assertEquals(driver.getCurrentUrl(),
+                     Configuration.get("home.url"),
+                     "After logout, should land on public uTest homepage");
     }
 
     @AfterClass
     public void tearDown() {
-        driver.quit();
+        if (driver != null) {
+            driver.quit();
+        }
     }
 }

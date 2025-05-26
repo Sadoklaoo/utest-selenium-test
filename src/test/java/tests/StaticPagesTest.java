@@ -3,14 +3,14 @@ package tests;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.*;
 
+import utils.Configuration;
+
 import java.time.Duration;
-import java.util.Map;
+import java.util.Arrays;
 
 public class StaticPagesTest {
     private WebDriver driver;
@@ -18,34 +18,55 @@ public class StaticPagesTest {
 
     @BeforeClass
     public void setUp() {
-        driver = new ChromeDriver();
-        wait   = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // 1) create driver based on config
+        String browser = Configuration.get("browser");
+        switch (browser.toLowerCase()) {
+            case "chrome":
+                driver = new ChromeDriver();
+                break;
+            // add more browsers here if you like…
+            default:
+                throw new IllegalArgumentException("Unsupported browser: " + browser);
+        }
+
+        // 2) maximize window if wanted
+       
+            driver.manage().window().maximize();
+        
+
+        // 3) explicit wait from config
+        int timeout = Configuration.getInt("timeout.seconds");
+        wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
     }
 
-    @Test
+    @Test(description="Verify that each static page has the correct H1")
     public void testStaticPages() {
-        Map<String,String> pages = new java.util.HashMap<>();
-        pages.put("Terms of Use for uTest Testers",   "https://www.utest.com/terms-and-conditions");
-        pages.put("Privacy Policy", "https://www.utest.com/privacy-policy");
+        // read the list of page-keys
+        String[] keys = Configuration.get("static.pages").split(",");
 
-        pages.forEach((expectedHeading, url) -> {
+        for (String key : keys) {
+            String url     = Configuration.get("static.page." + key + ".url");
+            String heading = Configuration.get("static.page." + key + ".heading");
+
             driver.get(url);
-                       // Wait for the H1 to be visible and grab its text
             WebElement h1 = wait.until(
                 ExpectedConditions.visibilityOfElementLocated(By.tagName("h1"))
             );
-             String actualHeading = h1.getText();
-            // Assert the H1 contains the expected keyword
+            String actual = h1.getText().trim();
             assertTrue(
-                actualHeading.contains(expectedHeading),
-                "On " + url + ", expected H1 to contain '" + expectedHeading +
-                "' but was '" + actualHeading + "'"
+                actual.contains(heading),
+                String.format(
+                    "On %s, expected H1 to contain '%s' but was '%s'",
+                    url, heading, actual
+                )
             );
-        });
+        }
     }
 
     @AfterClass
     public void tearDown() {
-        driver.quit();
+        if (driver != null) {
+            driver.quit();
+        }
     }
 }
